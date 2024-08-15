@@ -823,19 +823,28 @@ const dateTime = (function () {
      * formats the date/time as specified by the XPath fn:format-dateTime function
      * @param {number} millis - the timestamp to be formatted, in millis since the epoch
      * @param {string} picture - the picture string that specifies the format
-     * @param {string} timezone - the timezone to use
+     * @param {string} offset - the offset applied in addition to timezone if set
+     * @param {string} timezone - the target tzdata string timezone to use (IANA)
      * @returns {string} - the formatted timestamp
      */
-    function formatDateTime(millis, picture, timezone) {
+    function formatDateTime(millis, picture, offset, timezone) {
         var offsetHours = 0;
         var offsetMinutes = 0;
 
-        if (typeof timezone !== 'undefined') {
+        if (typeof timezone !== 'undefined' && timezone) {
+            const date = new Date(millis);
+            // Convert the date to a string formatted according to the target timezone by keeping fractionalSecondDigits precision
+            const options = { timeZone: timezone, timeZoneName: 'longOffset', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', fractionalSecondDigits: 3, hour12: false };
+            const localDateTime = date.toLocaleString('sv-SE', options).replace(',', '.' ).substring(0,23); // safe format to parse
+            millis = Date.parse(localDateTime);
+        }
+
+        if (typeof offset !== 'undefined' && offset) {
             // parse the hour and minute offsets
             // assume for now the format supplied is +hhmm
-            const offset = parseInt(timezone);
-            offsetHours = Math.floor(offset / 100);
-            offsetMinutes = offset % 100;
+            const intOffset = parseInt(offset);
+            offsetHours = Math.floor(intOffset / 100);
+            offsetMinutes = intOffset % 100;
         }
 
         var formatComponent = function (date, markerSpec) {
@@ -916,7 +925,7 @@ const dateTime = (function () {
         };
 
         let formatSpec;
-        if(typeof picture === 'undefined') {
+        if(typeof picture === 'undefined' || !picture) {
             // default to ISO 8601 format
             if (iso8601Spec === null) {
                 iso8601Spec = analyseDateTimePicture('[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01].[f001][Z01:01t]');
@@ -1337,16 +1346,17 @@ const dateTime = (function () {
      * Converts milliseconds since the epoch to an ISO 8601 timestamp
      * @param {Number} millis - milliseconds since the epoch to be converted
      * @param {string} [picture] - the picture string defining the format of the timestamp (defaults to ISO 8601)
-     * @param {string} [timezone] - the timezone to format the timestamp in (defaults to UTC)
+     * @param {string} offset - the offset applied in addition to timezone to format the timestamp in (defaults to UTC)
+     * @param {string} timezone - the target tzdata string timezone to use (IANA)
      * @returns {String} - the formatted timestamp
      */
-    function fromMillis(millis, picture, timezone) {
+    function fromMillis(millis, picture, offset, timezone) {
         // undefined inputs always return undefined
         if(typeof millis === 'undefined') {
             return undefined;
         }
 
-        return formatDateTime.call(this, millis, picture, timezone);
+        return formatDateTime.call(this, millis, picture, offset, timezone);
     }
 
     return {

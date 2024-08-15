@@ -149,12 +149,30 @@ describe("Functions with side-effects", () => {
         });
     });
 
-    describe("$now() returns timestamp with defined format and timezone", function() {
+    describe("$now() returns timestamp with defined format and offset", function() {
         it("should return result object", function() {
             var expr = jsonata("$now('[h]:[M01][P] [z]', '-0500')");
             var result = expr.evaluate(testdata2);
             // follows this pattern - "10:23am GMT-05:00"
             expect(result).to.eventually.match(/^\d?\d:\d\d[ap]m GMT-05:00$/);
+        });
+    });
+
+    describe("$now() with different timezones returning not the same values", function() {
+        it("should return result object", async function() {
+            var expr = jsonata("{'germany': $now('[H01]:[m01]', null, 'Europe/Berlin'), 'delay': $sum([1..10000]), 'australia': $now('[H01]:[m01]', null, 'Australia/Sydney')}.(germany != australia)");
+            var result = await expr.evaluate(testdata2);
+            var expected = true;
+            expect(result).to.deep.equal(expected);
+        });
+    });
+
+    describe("$now() with equal (default) timezones and offset definition returning the same values", function() {
+        it("should return result object", async function() {
+            var expr = jsonata("{'tzutc': $now(null, null, '" + new Intl.DateTimeFormat().resolvedOptions().timeZone + "'), 'delay': $sum([1..10000]), 'default': $now()}.(tzutc = default)");
+            var result = await expr.evaluate(testdata2);
+            var expected = true;
+            expect(result).to.deep.equal(expected);
         });
     });
 

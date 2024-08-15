@@ -1921,7 +1921,7 @@ var jsonata = (function() {
     staticFrame.bind('decodeUrl', defineFunction(fn.decodeUrl, '<s-:s>'));
     staticFrame.bind('eval', defineFunction(functionEval, '<sx?:x>'));
     staticFrame.bind('toMillis', defineFunction(datetime.toMillis, '<s-s?:n>'));
-    staticFrame.bind('fromMillis', defineFunction(datetime.fromMillis, '<n-s?s?:s>'));
+    staticFrame.bind('fromMillis', defineFunction(datetime.fromMillis, '<n-s?(ls)?(ls)?:s>'));
     staticFrame.bind('clone', defineFunction(functionClone, '<(oa)-:o>'));
 
     /**
@@ -2085,9 +2085,9 @@ var jsonata = (function() {
         var environment = createFrame(staticFrame);
 
         var timestamp = new Date(); // will be overridden on each call to evalute()
-        environment.bind('now', defineFunction(function(picture, timezone) {
-            return datetime.fromMillis(timestamp.getTime(), picture, timezone);
-        }, '<s?s?:s>'));
+        environment.bind('now', defineFunction(function(picture, offset, timezone) {
+            return datetime.fromMillis(timestamp.getTime(), picture, offset, timezone);
+        }, '<(sl)?(sl)?(sl)?:s>'));
         environment.bind('millis', defineFunction(function() {
             return timestamp.getTime();
         }, '<:n>'));
